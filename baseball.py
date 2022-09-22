@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import date, timedelta, datetime
+from datetime import datetime, date
 from discord_webhook import DiscordWebhook, DiscordEmbed
 
 angels_url = 'https://www.cbssports.com/mlb/teams/LAA/los-angeles-angels/schedule/'
@@ -10,7 +10,7 @@ dodgers_url = 'https://www.cbssports.com/mlb/teams/LAD/los-angeles-dodgers/sched
 rockies_url = 'https://www.cbssports.com/mlb/teams/COL/colorado-rockies/schedule/'
 
 #calculates time for all
-today = date.today()
+today = date.today().strftime("%b %-d, %Y")
 
 #assigns webhooks mapping to different channel webhooks.
 webhook_urls = {
@@ -19,72 +19,47 @@ webhook_urls = {
 }
 webhook = DiscordWebhook(url=webhook_urls.values(), username="CA Chefs")
 
-def angels(angels_url):
-    page = requests.get(angels_url)
-    soup = BeautifulSoup(page.text, 'lxml')
-    table = soup.find('table', class_='TableBase-table')
+def angels_mcd(result):
+    if result == "W":
+        mc_win = "Angel's Win! \n\n Whenever the Angels win at home, fans get the World Famous medium fries for FREE the following day with a ONE dollar minimum purchase from the McDonalds App. Download and register on the McDonald's App to receive this offer. Only valid within the Greater LA/Orange County DMA."
+        print(mc_win)
+        embed = DiscordEmbed(title='McDonalds Win Alert', description=mc_win, color='FF0000')
+        embed.add_embed_field(name='Date', value=today, inline=True)
+        embed.add_embed_field(name='Region', value='Southern California', inline=True)
+        embed.set_image(url='https://i.pinimg.com/originals/c9/e6/2f/c9e62f19246adcaf9b64897be3d3bda0.gif')
+        embed.set_footer(text='Powered by CA Chef Foodies',
+                            icon_url='http://hollywoodlife.com/wp-content/uploads/2019/01/geoff-hamanishi-kassandra-admits-to-cheating-ftr.jpg')
+        embed.set_timestamp()
+        webhook.add_embed(embed)
+        return True
 
-    no_cfa = "Angels didn't score more than 7 runs. No free sandwiches!"
-    cfa = 'Angels scored more than 7 runs! Check your app to redeem a free sandwich before 10:30AM PST the following day!'
-    mc_win = "Angel's Win! \n\n Whenever the Angels win at home, fans get the World Famous medium fries for FREE the following day with a ONE dollar minimum purchase from the McDonalds App. Download and register on the McDonald's App to receive this offer. Only valid within the Greater LA/Orange County DMA."
+def angels_cfa(team_score):
+    runs = 7
+    if int(team_score) > runs:
+        cfa = 'Angels scored more than 7 runs! Check your app to redeem a free sandwich before 10:30AM PST the following day!'
+        print(cfa)
+        embed = DiscordEmbed(title='Chick-Fil-A Sandwich Alert', description=cfa, color='FF0000')
+        embed.add_embed_field(name='Date', value=today, inline=True)
+        embed.add_embed_field(name='Region', value='Southern California', inline=True)
+        embed.set_image(url='https://i.pinimg.com/originals/c9/e6/2f/c9e62f19246adcaf9b64897be3d3bda0.gif')
+        embed.set_footer(text='Powered by CA Chef Foodies',
+                            icon_url='http://hollywoodlife.com/wp-content/uploads/2019/01/geoff-hamanishi-kassandra-admits-to-cheating-ftr.jpg')
+        embed.set_timestamp()
+        webhook.add_embed(embed)
+        return True
+    
+def angels(url):
+    dfs = pd.read_html(url)
+    stats = dfs[0].applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    todays_stats = stats.loc[stats["Date"] == today]
 
-    for team in table.find_all('tbody'):
-        rows = team.find_all('tr')
-        for row in rows:
-            try:
-                game_date = row.find('td', class_='TableBase-bodyTd').text.strip()
-                convert_date = datetime.strptime(game_date, '%b %d, %Y').date()
-                home_game = row.find('span', class_='CellLogoNameLockup-opposingPrefix').text.strip()
-                results = row.find('div', class_='CellGame').text.split(' ')[0]
-                score = row.find('div', class_='CellGame').text.split(' ')[1].split('-')
-                if convert_date == today:
-                    if home_game != '@':
-                        runs = 7
-                        # W = left number and L = right number
-                        if results == 'W':
-                            # Discord Logic for Mcdonalds
-                            embed = DiscordEmbed(title='McDonalds Win Alert', description=mc_win, color='FF0000')
-                            embed.add_embed_field(name='Date', value=game_date, inline=True)
-                            embed.add_embed_field(name='Region', value='Southern California', inline=True)
-                            embed.set_image(url='https://i.pinimg.com/originals/c9/e6/2f/c9e62f19246adcaf9b64897be3d3bda0.gif')
-                            embed.set_footer(text='Powered by CA Chef Foodies',
-                                             icon_url='http://hollywoodlife.com/wp-content/uploads/2019/01/geoff-hamanishi-kassandra-admits-to-cheating-ftr.jpg')
-                            embed.set_timestamp()
-                            webhook.add_embed(embed)
-
-
-                            # Discord Logic for CFA
-                            loss_score = int(score[1])
-                            if loss_score >= runs:
-                                # Discord Logic
-                                embed = DiscordEmbed(title='Chick-Fil-A Sandwich Alert', description=cfa, color='FF0000')
-                                embed.add_embed_field(name='Date', value=game_date, inline=True)
-                                embed.add_embed_field(name='Region', value='Southern California', inline=True)
-                                embed.set_image(url='https://i.pinimg.com/originals/c9/e6/2f/c9e62f19246adcaf9b64897be3d3bda0.gif')
-                                embed.set_footer(text='Powered by CA Chef Foodies',
-                                                 icon_url='http://hollywoodlife.com/wp-content/uploads/2019/01/geoff-hamanishi-kassandra-admits-to-cheating-ftr.jpg')
-                                embed.set_timestamp()
-                                webhook.add_embed(embed)
-                            else:
-                                pass
-                        else:
-                            actual_score = int(score[0])
-                            if actual_score >= runs:
-                                # Discord Logic
-                                embed = DiscordEmbed(title='Chick-Fil-A Sandwich Alert', description=cfa, color='FF0000')
-                                embed.add_embed_field(name='Date', value=game_date, inline=True)
-                                embed.add_embed_field(name='Region', value='Southern California', inline=True)
-                                embed.set_image(url='https://i.pinimg.com/originals/c9/e6/2f/c9e62f19246adcaf9b64897be3d3bda0.gif')
-                                embed.set_footer(text='CA Chef Foodies',
-                                                 icon_url='http://hollywoodlife.com/wp-content/uploads/2019/01/geoff-hamanishi-kassandra-admits-to-cheating-ftr.jpg')
-                                embed.set_timestamp()
-                                webhook.add_embed(embed)
-
-                            else:
-                                pass
-
-            except:
-                pass
+    if len(todays_stats):
+        total_result = todays_stats["Result"].iloc[0]
+        result, score = total_result.split()
+        team_score, other_team_score = score.split("-")
+        
+        angels_mcd(result)
+        angels_cfa(team_score)
 
 def cubs(cubs_url):
     page = requests.get(cubs_url)
@@ -244,8 +219,8 @@ def rockies(rockies_url):
             except:
                 pass
 
-cubs(cubs_url)
-angels(angels_url)
-dodgers(dodgers_url)
-rockies(rockies_url)
-response = webhook.execute()
+# cubs(cubs_url)
+# angels(angels_url)
+# dodgers(dodgers_url)
+# rockies(rockies_url)
+# response = webhook.execute()
