@@ -21,7 +21,7 @@ webhook = DiscordWebhook(url=webhook_urls.values(), username="CA Chefs")
 
 def get_stats(url):
     dfs = pd.read_html(url)
-    stats = dfs[0].applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    stats = dfs[0].applymap(lambda x: x.strip() if isinstance(x, str) else x) # Removes extra whitespace from dataframe
     todays_stats = stats.loc[stats["Date"] == today]
     return todays_stats
 
