@@ -20,6 +20,7 @@ webhook_urls = {
 webhook = DiscordWebhook(url=webhook_urls.values(), username="CA Chefs")
 
 def angels_mcd(result):
+    # McDonald's requirement: Angels win.
     if result == "W":
         mc_win = "Angel's Win! \n\n Whenever the Angels win at home, fans get the World Famous medium fries for FREE the following day with a ONE dollar minimum purchase from the McDonalds App. Download and register on the McDonald's App to receive this offer. Only valid within the Greater LA/Orange County DMA."
         print(mc_win)
@@ -34,6 +35,7 @@ def angels_mcd(result):
         return True
 
 def angels_cfa(team_score):
+    # Chick-fil-A's requirement: Angels score more than 7 runs.
     runs = 7
     if int(team_score) > runs:
         cfa = 'Angels scored more than 7 runs! Check your app to redeem a free sandwich before 10:30AM PST the following day!'
