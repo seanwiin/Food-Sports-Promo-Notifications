@@ -56,7 +56,7 @@ def angels(url):
     if len(todays_stats):
         total_result = todays_stats["Result"].iloc[0]
         result, score = total_result.split()
-        team_score, other_team_score = score.split("-")
+        team_score = score.split("-")
         
         angels_mcd(result)
         angels_cfa(team_score)
