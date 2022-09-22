@@ -19,6 +19,12 @@ webhook_urls = {
 }
 webhook = DiscordWebhook(url=webhook_urls.values(), username="CA Chefs")
 
+def get_stats(url):
+    dfs = pd.read_html(url)
+    stats = dfs[0].applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    todays_stats = stats.loc[stats["Date"] == today]
+    return todays_stats
+
 def angels_mcd(result):
     # McDonald's requirement: Angels win.
     if result == "W":
@@ -51,9 +57,7 @@ def angels_cfa(team_score):
         return True
     
 def angels(url):
-    dfs = pd.read_html(url)
-    stats = dfs[0].applymap(lambda x: x.strip() if isinstance(x, str) else x)
-    todays_stats = stats.loc[stats["Date"] == today]
+    todays_stats = get_stats(url)
 
     if len(todays_stats):
         total_result = todays_stats["Result"].iloc[0]
